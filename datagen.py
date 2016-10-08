@@ -69,8 +69,32 @@ for i in range(1,len(output)):
     output[i] = output[i] + [y_final[i-1]]
 
 #TODO: train again for the type B models:
+vals = []
+with open('1_pixelcamp_train_test.csv', 'rb') as csvfile:
+    ctx = csv.reader(csvfile)
+    for i in ctx:
+        vals += [i]
+vals = vals[1:]
+vals = [x for x in vals if str(int(x[1])%2) == '0']
+X = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15]), int(x[16])] for x in vals]
+y = [x[-1] for x in vals]
 
+clf = RandomForestClassifier(n_estimators=1000, criterion="entropy", max_depth=None, min_samples_split=5, random_state=0)
+pred = clf.fit(X, y)
+y_res = pred.predict(X)
+y_res = map(int, y_res)
+cf = confusion_matrix(map(int, y), y_res)
+auc = roc_auc_score(map(int, y), y_res)
+y_final = pred.predict(Xf)
+print cf
+print auc
+print y_final
+print list(y_final).count("0")
+print list(y_final).count("1")
 
+for i in range(1,len(output)):
+    if (output[i][1]=="0"):
+        output[i][-1] = y_final[i-1]
 
 
 with open('4_pixelcamp_results.csv', 'w') as csvfile:
