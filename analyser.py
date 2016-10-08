@@ -41,7 +41,7 @@ vals = vals[1:]
 
 X = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15]), int(x[16])] for x in vals]
 y = [x[-1] for x in vals]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.75, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 vals=[]
 with open('train_test_balanced.csv', 'rb') as csvfile:
@@ -60,12 +60,13 @@ with open('2_pixelcamp_predict.csv', 'rb') as csvfile:
 vals = vals[1:]
 Xf = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15]), int(x[16])] for x in vals]
 
+print sum(map(lambda x: 1 if x[0]=="1" else 0, Xf))
+print len(Xf)
 
 
 
-
-def real_analise(clf, X_train, X_test, y_train, y_test, warm):
-    for i in range(10):
+def real_analise(clf, trials, X_train, X_test, y_train, y_test, Xf, warm):
+    for i in range(trials):
         pred = clf.fit(X_train, y_train)
         y_res = pred.predict(X_test)
         clf.warm_start = True
@@ -80,44 +81,23 @@ def real_analise(clf, X_train, X_test, y_train, y_test, warm):
     y_final = pred.predict(Xf)
     print "0 freq: ", list(y_final).count('0')/float(list(y_final).count('0') + list(y_final).count('1'))
 
-def analise(clf, warm=True):
+def analise(clf, trials, X, y, X_train, X_test, y_train, y_test, Xf, warm=True):
     print "Raw:"
-    real_analise(clf, X_train, X_test, y_train, y_test, warm)
+    real_analise(clf, trials, X_train, X_test, y_train, y_test, Xf, warm)
     clf.warm_start = warm
     print "Normalized:"
-    real_analise(clf, X, X_test, y, y_test, warm)
+    real_analise(clf, trials, X, X_test, y, y_test, Xf, warm)
 
+def build_classifier(classname, trials, warm, **kwargs):
+    clf = classname(**kwargs)
+    print ""
+    print clf.__class__.__name__
+    analise(clf, trials, X, y, X_train, X_test, y_train, y_test, Xf, warm)
 
-print ""
-print "DecisionTreeClassifier"
-clf = DecisionTreeClassifier(max_depth=None, min_samples_split=10,
-      random_state=0)
-analise(clf)
-
-
-print ""
-print "RandomForestClassifier"
-clf = RandomForestClassifier(n_estimators=1000, criterion="entropy", max_depth=None,
+build_classifier(DecisionTreeClassifier, 10, True, max_depth=None, min_samples_split=10,random_state=0)
+build_classifier(RandomForestClassifier, 1, False, n_estimators=1000, criterion="entropy", max_depth=None,
       min_samples_split=5, random_state=0)
-analise(clf, False)
-
-print ""
-print "ExtraTreesClassifier"
-clf = ExtraTreesClassifier(n_estimators=1000, max_depth=None,
+build_classifier(ExtraTreesClassifier, 10, False, n_estimators=1000, max_depth=None,
       min_samples_split=2, random_state=0)
-analise(clf, False)
-
-print ""
-print "SVC"
-clf = SVC(decision_function_shape="ovo")
-analise(clf)
-
-print ""
-print "AdaBoostClassifier"
-clf = AdaBoostClassifier(n_estimators=1000, random_state=0)
-analise(clf)
-
-print ""
-print "BaggingClassifier"
-clf = BaggingClassifier(n_estimators=1000, random_state=0)
-analise(clf, False)
+build_classifier(AdaBoostClassifier, 10, True, n_estimators=1000, random_state=0)
+build_classifier(BaggingClassifier, 10, False, n_estimators=1000, random_state=0)

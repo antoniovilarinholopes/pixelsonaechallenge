@@ -39,11 +39,11 @@ vals = vals[1:]
 vals0 = [x for x in vals if str(int(x[1])%2) == '0']
 X0 = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15]), int(x[16])] for x in vals0]
 y0 = [x[-1] for x in vals0]
-X_train0, X_test0, y_train0, y_test0 = train_test_split(X0, y0, test_size=0.75, random_state=0)
+X_train0, X_test0, y_train0, y_test0 = train_test_split(X0, y0, test_size=0.2, random_state=0)
 vals1 = [x for x in vals if str(int(x[1])%2) == '1']
 X1 = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15]), int(x[16])] for x in vals1]
 y1 = [x[-1] for x in vals1]
-X_train1, X_test1, y_train1, y_test1 = train_test_split(X1, y1, test_size=0.75, random_state=0)
+X_train1, X_test1, y_train1, y_test1 = train_test_split(X1, y1, test_size=0.2, random_state=0)
 
 vals = []
 with open('train_test_balanced.csv', 'rb') as csvfile:
@@ -72,8 +72,8 @@ Xf1 = [[str(int(x[1])%2), x[2], x[8], x[9], ffs(x[12]), float(x[13]), int(x[15])
 
 
 
-def real_analise(clf, X_train, X_test, y_train, y_test, Xf, warm):
-    for i in range(10):
+def real_analise(clf, trials, X_train, X_test, y_train, y_test, Xf, warm):
+    for i in range(trials):
         pred = clf.fit(X_train, y_train)
         y_res = pred.predict(X_test)
         clf.warm_start = True
@@ -88,30 +88,29 @@ def real_analise(clf, X_train, X_test, y_train, y_test, Xf, warm):
     y_final = pred.predict(Xf)
     print "0 freq: ", list(y_final).count('0')/float(list(y_final).count('0') + list(y_final).count('1'))
 
-def analise(clf, X, y, X_train, X_test, y_train, y_test, Xf, warm=True):
+def analise(clf, trials, X, y, X_train, X_test, y_train, y_test, Xf, warm=True):
     print "Raw:"
-    real_analise(clf, X_train, X_test, y_train, y_test, Xf, warm)
+    real_analise(clf, trials, X_train, X_test, y_train, y_test, Xf, warm)
     clf.warm_start = warm
     print "Normalized:"
-    real_analise(clf, X, X_test, y, y_test, Xf, warm)
+    real_analise(clf, trials, X, X_test, y, y_test, Xf, warm)
 
-def build_classifier(classname, warm, **kwargs):
+def build_classifier(classname, trials, warm, **kwargs):
     clf = classname(**kwargs)
     print ""
     print clf.__class__.__name__
+#    print "Season B"
+#    analise(clf, trials, X0, y0, X_train0, X_test0, y_train0, y_test0, Xf0, warm)
     print "Season A"
-    analise(clf, X0, y0, X_train0, X_test0, y_train0, y_test0, Xf0, warm)
-    print "Season B"
     clf = classname(**kwargs)
-    analise(clf, X1, y1, X_train1, X_test1, y_train1, y_test1, Xf1, warm)
+    analise(clf, trials, X1, y1, X_train1, X_test1, y_train1, y_test1, Xf1, warm)
 
-build_classifier(DecisionTreeClassifier, True, max_depth=None, min_samples_split=10,random_state=0)
-build_classifier(RandomForestClassifier, False, n_estimators=1000, criterion="entropy", max_depth=None,
+build_classifier(DecisionTreeClassifier, 10, True, max_depth=None, min_samples_split=10,random_state=0)
+build_classifier(RandomForestClassifier, 1, False, n_estimators=1000, criterion="entropy", max_depth=None,
       min_samples_split=5, random_state=0)
-build_classifier(ExtraTreesClassifier, False, n_estimators=1000, max_depth=None,
+build_classifier(ExtraTreesClassifier, 10, False, n_estimators=1000, max_depth=None,
       min_samples_split=2, random_state=0)
-build_classifier(SVC, True, decision_function_shape="ovo")
-build_classifier(AdaBoostClassifier, True, n_estimators=1000, random_state=0)
-build_classifier(BaggingClassifier, False, n_estimators=1000, random_state=0)
+build_classifier(AdaBoostClassifier, 10, True, n_estimators=1000, random_state=0)
+build_classifier(BaggingClassifier, 10, False, n_estimators=1000, random_state=0)
 
 #TODO: Build classifier for A and B and dump both
